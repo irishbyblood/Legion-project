@@ -4,6 +4,8 @@ import requests
 import shutil
 import socket
 import re
+import sys
+from urllib.parse import urlparse, urlunparse
 from flask import Flask, render_template_string, request, jsonify
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
@@ -28,8 +30,9 @@ def validate_search_query(query):
     query = query.strip()
     if len(query) > 500:  # Limit query length
         return None
-    # Basic validation - allow alphanumeric, spaces, and common punctuation (removed backslash)
-    if not re.match(r'^[\w\s\-.,!?@#$%&*()+=\[\]{}:;"\'/]+$', query):
+    # Basic validation - allow alphanumeric, spaces, and basic safe punctuation only
+    # Removed quotes, semicolons, and other potentially dangerous characters
+    if not re.match(r'^[\w\s\-.,!?()]+$', query):
         return None
     return query
 
@@ -51,9 +54,17 @@ def real_dark_web_search(query):
             try:
                 title = item.select_one('a').text.strip()
                 link = item.select_one('a')['href']
-                # Security: Only replace if it's actually a .onion domain
-                if link.endswith('.onion') or '.onion/' in link:
-                    link = link.replace('.onion', '.onion.ly')
+                # Security: Properly parse and replace .onion domains
+                if link:
+                    try:
+                        parsed = urlparse(link)
+                        if parsed.netloc.endswith('.onion'):
+                            # Replace .onion TLD with .onion.ly
+                            new_netloc = parsed.netloc[:-6] + '.onion.ly'  # Remove '.onion' and add '.onion.ly'
+                            link = urlunparse((parsed.scheme, new_netloc, parsed.path, 
+                                             parsed.params, parsed.query, parsed.fragment))
+                    except Exception:
+                        pass  # Keep original link if parsing fails
                 snippet = item.select_one('p').text.strip()
                 results.append({"title": title, "link": link, "snippet": snippet})
             except (AttributeError, KeyError, TypeError):
@@ -64,10 +75,16 @@ def real_dark_web_search(query):
 
 # --- MODULE 2: HUNTRESS THREAT SCANNER ---
 def real_security_scan():
-    """Scans Android PIDs for Persistence/Spyware"""
+    """Scans PIDs for Persistence/Spyware - Cross-platform support"""
     try:
-        # Fixed: Use shell=False to prevent command injection
-        output = subprocess.check_output(["ps", "-ef"]).decode()
+        # Cross-platform process listing
+        if sys.platform.startswith('win'):
+            # Windows: use tasklist
+            output = subprocess.check_output(["tasklist", "/v"], universal_newlines=True)
+        else:
+            # Unix-like: use ps
+            output = subprocess.check_output(["ps", "-ef"], universal_newlines=True)
+        
         lines = output.split('\n')
         threats = []
         safe_count = 0
@@ -80,6 +97,8 @@ def real_security_scan():
         return {"status": status, "threats": threats}
     except subprocess.CalledProcessError as e:
         return {"status": f"SCAN FAILED: {str(e)}", "threats": []}
+    except FileNotFoundError:
+        return {"status": "SCAN FAILED: Process listing command not available", "threats": []}
     except Exception as e:
         return {"status": f"SCAN FAILED: {str(e)}", "threats": []}
 
@@ -214,13 +233,23 @@ HTML = """
         });
     }
 
-    // REAL VOICE API
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.onresult = (e) => {
-        document.getElementById('query').value = e.results[0][0].transcript;
-        runAction();
-    };
-    function toggleMic() { recognition.start(); }
+    // REAL VOICE API - with feature detection
+    let recognition = null;
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.onresult = (e) => {
+            document.getElementById('query').value = e.results[0][0].transcript;
+            runAction();
+        };
+    }
+    
+    function toggleMic() {
+        if (recognition) {
+            recognition.start();
+        } else {
+            alert('Speech recognition is not supported in your browser.');
+        }
+    }
 </script>
 </body>
 </html>
