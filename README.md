@@ -151,11 +151,29 @@ Edit `interface/static/css/style.css`:
 PORT=8080 python interface/web_server.py
 ```
 
+### Set Secret Key (Production)
+
+For production deployments, set a persistent secret key:
+
+```bash
+# Generate a secret key
+python3 -c "import os; print(os.urandom(24).hex())"
+
+# Set it as environment variable
+export SECRET_KEY="your-generated-key-here"
+python interface/web_server.py
+```
+
+**Note**: Without a persistent secret key, user sessions will reset on server restart.
+
 ## Security Notes
 
 - The server binds to `0.0.0.0` to allow external connections
 - Input is sanitized to prevent XSS attacks
+- SSRF protection blocks access to private IPs and localhost
+- URL validation prevents malicious requests
 - Use behind a reverse proxy (like Cloudflare Tunnel) for production
+- Set SECRET_KEY environment variable for production deployments
 
 ## Troubleshooting
 

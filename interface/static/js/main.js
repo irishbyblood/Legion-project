@@ -164,11 +164,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function clearConsole() {
-        consoleBody.innerHTML = `
-            <div class="console-message system-message">
-                <span class="prompt">SYSTEM:</span> Console cleared.<br>
-                <span class="prompt">></span> <span class="cursor">_</span>
-            </div>
-        `;
+        // Clear the console safely
+        consoleBody.innerHTML = '';
+        
+        // Create message div
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'console-message system-message';
+        
+        // Add prompt
+        const promptSpan = document.createElement('span');
+        promptSpan.className = 'prompt';
+        promptSpan.textContent = 'SYSTEM:';
+        messageDiv.appendChild(promptSpan);
+        
+        messageDiv.appendChild(document.createTextNode(' Console cleared.'));
+        messageDiv.appendChild(document.createElement('br'));
+        
+        // Add prompt line
+        const promptSpan2 = document.createElement('span');
+        promptSpan2.className = 'prompt';
+        promptSpan2.textContent = '>';
+        messageDiv.appendChild(promptSpan2);
+        
+        messageDiv.appendChild(document.createTextNode(' '));
+        
+        // Add cursor
+        const cursorSpan = document.createElement('span');
+        cursorSpan.className = 'cursor';
+        cursorSpan.textContent = '_';
+        messageDiv.appendChild(cursorSpan);
+        
+        consoleBody.appendChild(messageDiv);
     }
 });

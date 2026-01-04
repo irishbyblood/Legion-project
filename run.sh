@@ -27,10 +27,12 @@ fi
 
 # Check if dependencies are installed
 echo "Checking dependencies..."
-python3 -c "import flask, requests, duckduckgo_search, bs4" 2>/dev/null
+python3 -c "import flask" 2>/dev/null || { echo "❌ flask not installed"; exit 1; }
+python3 -c "import requests" 2>/dev/null || { echo "❌ requests not installed"; exit 1; }
+python3 -c "from duckduckgo_search import DDGS" 2>/dev/null || { echo "❌ duckduckgo-search not installed"; exit 1; }
+python3 -c "from bs4 import BeautifulSoup" 2>/dev/null || { echo "❌ beautifulsoup4 not installed"; exit 1; }
 
 if [ $? -ne 0 ]; then
-    echo "❌ Dependencies not installed."
     echo ""
     echo "Run: pip install -r requirements.txt"
     echo "Or: bash setup.sh"
