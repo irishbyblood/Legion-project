@@ -28,8 +28,8 @@ def validate_search_query(query):
     query = query.strip()
     if len(query) > 500:  # Limit query length
         return None
-    # Basic validation - allow alphanumeric, spaces, and common punctuation
-    if not re.match(r'^[\w\s\-.,!?@#$%&*()+=\[\]{}:;"\'/\\]+$', query):
+    # Basic validation - allow alphanumeric, spaces, and common punctuation (removed backslash)
+    if not re.match(r'^[\w\s\-.,!?@#$%&*()+=\[\]{}:;"\'/]+$', query):
         return None
     return query
 
@@ -50,10 +50,14 @@ def real_dark_web_search(query):
         for item in soup.select('li.result'):
             try:
                 title = item.select_one('a').text.strip()
-                link = item.select_one('a')['href'].replace('.onion', '.onion.ly')
+                link = item.select_one('a')['href']
+                # Security: Only replace if it's actually a .onion domain
+                if link.endswith('.onion') or '.onion/' in link:
+                    link = link.replace('.onion', '.onion.ly')
                 snippet = item.select_one('p').text.strip()
                 results.append({"title": title, "link": link, "snippet": snippet})
-            except: continue
+            except (AttributeError, KeyError, TypeError):
+                continue
         return results[:10]
     except Exception as e:
         return [{"title": "GATEWAY ERROR", "snippet": str(e), "link": "#"}]
@@ -74,8 +78,10 @@ def real_security_scan():
             safe_count += 1
         status = f"SCANNED {safe_count} PROCESSES."
         return {"status": status, "threats": threats}
-    except:
-        return {"status": "SCAN FAILED (ROOT REQUIRED)", "threats": []}
+    except subprocess.CalledProcessError as e:
+        return {"status": f"SCAN FAILED: {str(e)}", "threats": []}
+    except Exception as e:
+        return {"status": f"SCAN FAILED: {str(e)}", "threats": []}
 
 # --- MODULE 3: CLEARNET & SYSTEM ---
 def real_web_search(query):
@@ -86,7 +92,8 @@ def real_web_search(query):
         if not query:
             return [{"title": "INVALID QUERY", "body": "Query contains invalid characters", "href": "#"}]
         return DDGS().text(query, max_results=5)
-    except: return []
+    except Exception as e:
+        return [{"title": "SEARCH ERROR", "body": str(e), "href": "#"}]
 
 def system_stats():
     total, used, free = shutil.disk_usage("/")
