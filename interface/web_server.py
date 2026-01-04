@@ -17,6 +17,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Constants
+REQUEST_TIMEOUT = 10  # Timeout for HTTP requests in seconds
+MAX_CONTENT_LENGTH = 5000  # Maximum content length for scraped text
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
 app = Flask(__name__)
 
 # Simple HTML template for the main page
@@ -218,9 +223,9 @@ def scrape():
         
         # Fetch and parse the webpage
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': USER_AGENT
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -239,7 +244,7 @@ def scrape():
         return jsonify({
             'title': title,
             'url': url,
-            'content': text[:5000]  # Limit content size
+            'content': text[:MAX_CONTENT_LENGTH]  # Limit content size
         })
     
     except Exception as e:

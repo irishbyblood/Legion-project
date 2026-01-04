@@ -1,4 +1,4 @@
-flask
-requests
-duckduckgo-search
-beautifulsoup4
+flask>=3.0.0
+requests>=2.31.0
+duckduckgo-search>=8.0.0
+beautifulsoup4>=4.12.0
