@@ -59,13 +59,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageDiv = document.createElement('div');
         messageDiv.className = `console-message ${className}`;
         
+        // Escape the message content
+        const cleanMessage = message.replace('SYSTEM: ', '').replace('USER: ', '').replace('ERROR: ', '');
+        const escapedMessage = escapeHtml(cleanMessage);
+        
         // Add prompt for system messages
         if (className === 'system-message') {
-            messageDiv.innerHTML = `<span class="prompt">SYSTEM:</span> ${message.replace('SYSTEM: ', '')}`;
+            const prompt = document.createElement('span');
+            prompt.className = 'prompt';
+            prompt.textContent = 'SYSTEM:';
+            messageDiv.appendChild(prompt);
+            messageDiv.appendChild(document.createTextNode(' ' + cleanMessage));
         } else if (className === 'user-message') {
-            messageDiv.innerHTML = `<span class="prompt">USER:</span> ${message.replace('USER: ', '')}`;
+            const prompt = document.createElement('span');
+            prompt.className = 'prompt';
+            prompt.textContent = 'USER:';
+            messageDiv.appendChild(prompt);
+            messageDiv.appendChild(document.createTextNode(' ' + cleanMessage));
         } else if (className === 'error-message') {
-            messageDiv.innerHTML = `<span class="prompt">ERROR:</span> ${message.replace('ERROR: ', '')}`;
+            const prompt = document.createElement('span');
+            prompt.className = 'prompt';
+            prompt.textContent = 'ERROR:';
+            messageDiv.appendChild(prompt);
+            messageDiv.appendChild(document.createTextNode(' ' + cleanMessage));
         } else {
             messageDiv.textContent = message;
         }

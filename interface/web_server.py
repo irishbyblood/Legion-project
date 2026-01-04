@@ -10,6 +10,8 @@ from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 import logging
 import os
+from urllib.parse import urlparse
+import ipaddress
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+# Use environment variable for secret key, or generate one for development
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 
 class LegionAI:
     """Legion Prime AI Core"""
@@ -47,8 +50,52 @@ class LegionAI:
             logger.error(f"Search error: {e}")
             return []
     
+    def _is_safe_url(self, url):
+        """Validate URL to prevent SSRF attacks"""
+        try:
+            parsed = urlparse(url)
+            
+            # Only allow http and https schemes
+            if parsed.scheme not in ['http', 'https']:
+                return False
+            
+            # Get hostname
+            hostname = parsed.hostname
+            if not hostname:
+                return False
+            
+            # Resolve hostname to IP
+            try:
+                import socket
+                ip = socket.gethostbyname(hostname)
+                ip_obj = ipaddress.ip_address(ip)
+                
+                # Block private IP ranges
+                if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+                    logger.warning(f"Blocked private IP access: {url} -> {ip}")
+                    return False
+                    
+            except (socket.gaierror, ValueError) as e:
+                logger.warning(f"Could not resolve hostname: {hostname}")
+                return False
+            
+            return True
+        except Exception as e:
+            logger.error(f"URL validation error: {e}")
+            return False
+    
     def fetch_page_content(self, url):
         """Fetch and parse webpage content"""
+        # Validate URL first
+        if not url or not isinstance(url, str):
+            logger.error("Invalid URL: empty or not a string")
+            return None
+            
+        # Check if URL is safe
+        if not self._is_safe_url(url):
+            logger.error(f"Unsafe URL blocked: {url}")
+            return None
+        
         try:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
