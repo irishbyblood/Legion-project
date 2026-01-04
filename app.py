@@ -3,16 +3,45 @@ import subprocess
 import requests
 import shutil
 import socket
+import re
 from flask import Flask, render_template_string, request, jsonify
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+# Security: Add security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https:;"
+    return response
+
+# Security: Input validation function
+def validate_search_query(query):
+    """Validate and sanitize search query"""
+    if not query or not isinstance(query, str):
+        return None
+    # Remove potentially dangerous characters while allowing normal search queries
+    query = query.strip()
+    if len(query) > 500:  # Limit query length
+        return None
+    # Basic validation - allow alphanumeric, spaces, and common punctuation
+    if not re.match(r'^[\w\s\-.,!?@#$%&*()+=\[\]{}:;"\'/\\]+$', query):
+        return None
+    return query
+
 # --- MODULE 1: DARK WEB GATEWAY ---
 def real_dark_web_search(query):
     """Access Tor Network via Clearnet Gateway"""
     try:
+        # Security: Validate query
+        query = validate_search_query(query)
+        if not query:
+            return [{"title": "INVALID QUERY", "snippet": "Query contains invalid characters", "link": "#"}]
+        
         url = f"https://ahmia.fi/search/?q={query}"
         headers = {'User-Agent': 'Mozilla/5.0 (Android 10; Mobile; rv:68.0) Gecko/68.0 Firefox/68.0'}
         resp = requests.get(url, headers=headers, timeout=10)
@@ -50,7 +79,13 @@ def real_security_scan():
 
 # --- MODULE 3: CLEARNET & SYSTEM ---
 def real_web_search(query):
-    try: return DDGS().text(query, max_results=5)
+    """Search clearnet with validation"""
+    try:
+        # Security: Validate query
+        query = validate_search_query(query)
+        if not query:
+            return [{"title": "INVALID QUERY", "body": "Query contains invalid characters", "href": "#"}]
+        return DDGS().text(query, max_results=5)
     except: return []
 
 def system_stats():
@@ -190,7 +225,11 @@ def home(): return render_template_string(HTML)
 @app.route('/search', methods=['POST'])
 def search():
     data = request.json
-    if data['type'] == 'dark': return jsonify(results=real_dark_web_search(data['query']))
+    if not data or 'query' not in data or 'type' not in data:
+        return jsonify(results=[{"title": "ERROR", "body": "Invalid request", "href": "#"}])
+    
+    if data['type'] == 'dark': 
+        return jsonify(results=real_dark_web_search(data['query']))
     return jsonify(results=real_web_search(data['query']))
 
 @app.route('/scan')
