@@ -12,6 +12,7 @@ import psutil
 import socket
 import os
 import re
+from urllib.parse import quote
 from datetime import datetime
 
 app = Flask(__name__)
@@ -39,7 +40,9 @@ class WebSearchAgent(LegionAgent):
         try:
             self.status = "searching"
             # Use DuckDuckGo API for privacy-focused search
-            url = f"https://api.duckduckgo.com/?q={query}&format=json&no_html=1&skip_disambig=1"
+            # URL encode query to prevent injection
+            encoded_query = quote(query)
+            url = f"https://api.duckduckgo.com/?q={encoded_query}&format=json&no_html=1&skip_disambig=1"
             response = requests.get(url, timeout=10)
             data = response.json()
             
@@ -84,7 +87,9 @@ class DarkWebAgent(LegionAgent):
         try:
             self.status = "searching darknet"
             # Search Ahmia for .onion sites
-            search_url = f"{AHMIA_SEARCH_URL}{query}"
+            # URL encode query to prevent injection
+            encoded_query = quote(query)
+            search_url = f"{AHMIA_SEARCH_URL}{encoded_query}"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Android 10; Mobile; rv:85.0) Gecko/85.0 Firefox/85.0"
             }
@@ -126,6 +131,8 @@ class SecurityAgent(LegionAgent):
     """Agent for security scanning and threat hunting"""
     def __init__(self):
         super().__init__("Security", "Huntress-style threat hunting")
+        # Note: These keywords will generate false positives from legitimate system processes
+        # In production, use more sophisticated heuristics and whitelisting
         self.suspicious_keywords = [
             "keylog", "trace", "attack", "exploit", "malware",
             "trojan", "backdoor", "rootkit", "inject", "spy"
@@ -227,7 +234,7 @@ def system_info():
         try:
             public_ip_response = requests.get('https://api.ipify.org?format=json', timeout=5)
             public_ip = public_ip_response.json().get('ip', 'Unknown')
-        except:
+        except (requests.RequestException, ValueError):
             public_ip = 'Unknown'
         
         # Memory info
@@ -292,4 +299,6 @@ def health():
 
 if __name__ == '__main__':
     # Run on all interfaces for Termux/Android access
+    # WARNING: For production, use a proper WSGI server (gunicorn/waitress) with authentication
+    # and rate limiting. This development server should only be used in trusted networks.
     app.run(host='0.0.0.0', port=5000, debug=False)
