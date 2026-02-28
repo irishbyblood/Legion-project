@@ -1,6 +1,6 @@
 # Legion-project
 
-A Flask-based web application featuring dark web search gateway, system security scanning, and clearnet search capabilities.
+A Flask-based application featuring dark web search gateway, system security scanning, and clearnet search capabilities.
 
 ## Features
 
