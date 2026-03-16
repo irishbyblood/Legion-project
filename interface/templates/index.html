@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ai_name }} - Legion AI Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <h1 class="glitch" data-text="{{ ai_name }}">{{ ai_name }}</h1>
+                <p class="domain-info">{{ domain }}</p>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">ONLINE</span>
+            </div>
+        </header>
+
+        <!-- Main Interface -->
+        <main class="main-content">
+            <!-- Terminal-style console -->
+            <div class="console">
+                <div class="console-header">
+                    <span class="console-title">LEGION PRIME NEURAL INTERFACE</span>
+                    <span class="console-controls">
+                        <span class="control-btn"></span>
+                        <span class="control-btn"></span>
+                        <span class="control-btn"></span>
+                    </span>
+                </div>
+                <div class="console-body" id="console">
+                    <div class="console-message system-message">
+                        <span class="prompt">SYSTEM:</span> Legion Prime Neural Interface initialized.<br>
+                        <span class="prompt">SYSTEM:</span> Connection established to {{ domain }}<br>
+                        <span class="prompt">SYSTEM:</span> All systems operational. Ready for input.<br>
+                        <span class="prompt">></span> <span class="cursor">_</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Input -->
+            <div class="input-section">
+                <form id="queryForm">
+                    <div class="input-wrapper">
+                        <span class="input-prompt">></span>
+                        <input 
+                            type="text" 
+                            id="queryInput" 
+                            class="query-input" 
+                            placeholder="Enter your query..." 
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="submit-btn">EXECUTE</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Display -->
+            <div class="results-section" id="results" style="display: none;">
+                <h2 class="results-title">SEARCH RESULTS</h2>
+                <div id="resultsContent"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Legion AI © 2026 | Platform: Android (Termux + Flask) | Theme: Cyberpunk</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
