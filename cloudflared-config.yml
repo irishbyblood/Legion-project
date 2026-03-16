@@ -1,0 +1,13 @@
+# Cloudflare Tunnel Configuration for Legion AI
+# This file configures cloudflared to create a tunnel to your local Flask server
+
+tunnel: legion-prime-tunnel
+credentials-file: /data/data/com.termux/files/home/.cloudflared/credentials.json
+
+ingress:
+  # Route all traffic to local Flask server
+  - hostname: horizen-network.com
+    service: http://localhost:5000
+  
+  # Catch-all rule
+  - service: http_status:404
